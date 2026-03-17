@@ -1,0 +1,38 @@
+<form class="ai-scene-dialog">
+  <div class="prompt-section">
+    <label for="scene-prompt">Scene Description</label>
+    <textarea id="scene-prompt" name="prompt" rows="3" placeholder="A vast hellish wasteland with sharp black rocks under a red sky...">{{prompt}}</textarea>
+  </div>
+
+  <div class="name-section">
+    <label for="scene-name">Scene Name</label>
+    <input type="text" id="scene-name" name="sceneName" value="{{sceneName}}" placeholder="Generated Scene" />
+  </div>
+
+  <div class="preview-section {{#unless imageData}}empty{{/unless}}">
+    {{#if imageData}}
+      <img src="data:{{mimeType}};base64,{{imageData}}" alt="Generated scene preview" />
+    {{else}}
+      <div class="preview-placeholder">
+        <i class="fas fa-image"></i>
+        <span>Preview appears here</span>
+      </div>
+    {{/if}}
+  </div>
+
+  {{#if generating}}
+    <div class="generating-overlay">
+      <i class="fas fa-spinner fa-spin"></i>
+      <span>Generating image...</span>
+    </div>
+  {{/if}}
+
+  <div class="button-row">
+    <button type="button" data-action="generate" {{#if generating}}disabled{{/if}}>
+      <i class="fas fa-wand-magic-sparkles"></i> Generate
+    </button>
+    <button type="button" data-action="create-scene" {{#unless imageData}}disabled{{/unless}}>
+      <i class="fas fa-map"></i> Create Scene
+    </button>
+  </div>
+</form>

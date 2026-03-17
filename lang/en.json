@@ -1,0 +1,6 @@
+{
+  "AI-SCENE.title": "AI Scene Generator",
+  "AI-SCENE.button": "AI Scene",
+  "AI-SCENE.settings.apiKey.name": "Gemini API Key",
+  "AI-SCENE.settings.apiKey.hint": "Your Google AI Studio API key for Nano Banana 2 image generation."
+}
