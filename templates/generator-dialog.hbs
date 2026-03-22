@@ -1,38 +1,91 @@
 <form class="ai-scene-dialog">
-  <div class="prompt-section">
-    <label for="scene-prompt">Scene Description</label>
-    <textarea id="scene-prompt" name="prompt" rows="3" placeholder="A vast hellish wasteland with sharp black rocks under a red sky...">{{prompt}}</textarea>
-  </div>
+  {{!-- Tab Navigation --}}
+  <nav class="tab-navigation">
+    <button type="button" class="tab-btn {{#if (eq activeTab 'scene')}}active{{/if}}" data-tab="scene">
+      <i class="fas fa-image"></i> Scene
+    </button>
+    <button type="button" class="tab-btn {{#if (eq activeTab 'battlemap')}}active{{/if}}" data-tab="battlemap">
+      <i class="fas fa-chess-board"></i> Battlemap
+    </button>
+  </nav>
 
-  <div class="name-section">
-    <label for="scene-name">Scene Name</label>
-    <input type="text" id="scene-name" name="sceneName" value="{{sceneName}}" placeholder="Generated Scene" />
-  </div>
+  {{!-- SCENE TAB --}}
+  <div class="tab-content {{#unless (eq activeTab 'scene')}}hidden{{/unless}}" data-tab-content="scene">
+    <div class="prompt-section">
+      <label for="scene-prompt">Scene Description</label>
+      <textarea id="scene-prompt" name="prompt" rows="3" placeholder="A vast hellish wasteland with sharp black rocks under a red sky...">{{prompt}}</textarea>
+    </div>
 
-  <div class="preview-section {{#unless imageData}}empty{{/unless}}">
-    {{#if imageData}}
-      <img src="data:{{mimeType}};base64,{{imageData}}" alt="Generated scene preview" />
-    {{else}}
-      <div class="preview-placeholder">
-        <i class="fas fa-image"></i>
-        <span>Preview appears here</span>
+    <div class="name-section">
+      <label for="scene-name">Scene Name</label>
+      <input type="text" id="scene-name" name="sceneName" value="{{sceneName}}" placeholder="Generated Scene" />
+    </div>
+
+    <div class="preview-section {{#unless imageData}}empty{{/unless}}">
+      {{#if imageData}}
+        <img src="data:{{mimeType}};base64,{{imageData}}" alt="Generated scene preview" />
+      {{else}}
+        <div class="preview-placeholder">
+          <i class="fas fa-image"></i>
+          <span>Preview appears here</span>
+        </div>
+      {{/if}}
+    </div>
+
+    {{#if generating}}
+      <div class="generating-overlay">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>Generating scene image...</span>
       </div>
     {{/if}}
+
+    <div class="button-row">
+      <button type="button" data-action="generate" {{#if generating}}disabled{{/if}}>
+        <i class="fas fa-wand-magic-sparkles"></i> Generate
+      </button>
+      <button type="button" data-action="create-scene" {{#unless imageData}}disabled{{/unless}}>
+        <i class="fas fa-map"></i> Create Scene
+      </button>
+    </div>
   </div>
 
-  {{#if generating}}
-    <div class="generating-overlay">
-      <i class="fas fa-spinner fa-spin"></i>
-      <span>Generating image...</span>
+  {{!-- BATTLEMAP TAB --}}
+  <div class="tab-content {{#unless (eq activeTab 'battlemap')}}hidden{{/unless}}" data-tab-content="battlemap">
+    <div class="prompt-section">
+      <label for="bm-prompt">Battlemap Description</label>
+      <textarea id="bm-prompt" name="bmPrompt" rows="3" placeholder="Hellish wasteland road with three destroyed war machines, scattered debris, lava cracks...">{{bmPrompt}}</textarea>
     </div>
-  {{/if}}
 
-  <div class="button-row">
-    <button type="button" data-action="generate" {{#if generating}}disabled{{/if}}>
-      <i class="fas fa-wand-magic-sparkles"></i> Generate
-    </button>
-    <button type="button" data-action="create-scene" {{#unless imageData}}disabled{{/unless}}>
-      <i class="fas fa-map"></i> Create Scene
-    </button>
+    <div class="name-section">
+      <label for="bm-name">Scene Name</label>
+      <input type="text" id="bm-name" name="bmName" value="{{bmName}}" placeholder="Generated Battlemap" />
+    </div>
+
+    <div class="preview-section bm-preview {{#unless bmImageData}}empty{{/unless}}">
+      {{#if bmImageData}}
+        <img src="data:{{bmMimeType}};base64,{{bmImageData}}" alt="Generated battlemap preview" />
+      {{else}}
+        <div class="preview-placeholder">
+          <i class="fas fa-chess-board"></i>
+          <span>Battlemap preview appears here</span>
+        </div>
+      {{/if}}
+    </div>
+
+    {{#if bmGenerating}}
+      <div class="generating-overlay">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>Generating battlemap...</span>
+      </div>
+    {{/if}}
+
+    <div class="button-row">
+      <button type="button" data-action="generate-battlemap" {{#if bmGenerating}}disabled{{/if}}>
+        <i class="fas fa-chess-board"></i> Generate Battlemap
+      </button>
+      <button type="button" data-action="create-battlemap-scene" {{#unless bmImageData}}disabled{{/unless}}>
+        <i class="fas fa-map"></i> Create Scene
+      </button>
+    </div>
   </div>
 </form>

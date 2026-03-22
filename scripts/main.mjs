@@ -5,9 +5,10 @@ const MODULE_ID = 'ai-scene-generator';
 let generatorApp;
 
 Hooks.once('init', () => {
-  game.settings.register(MODULE_ID, 'apiKey', {
-    name: game.i18n?.localize('AI-SCENE.settings.apiKey.name') ?? 'Gemini API Key',
-    hint: game.i18n?.localize('AI-SCENE.settings.apiKey.hint') ?? 'Your Google AI Studio API key for Nano Banana 2 image generation.',
+  // RunComfy API Token (for both scenes and battlemaps)
+  game.settings.register(MODULE_ID, 'runcomfyApiToken', {
+    name: 'RunComfy API Token',
+    hint: 'RunComfy API token for AI image generation. Get one at runcomfy.com → Profile.',
     scope: 'world',
     config: true,
     type: String,
@@ -17,21 +18,21 @@ Hooks.once('init', () => {
 });
 
 Hooks.on('getSceneControlButtons', (controls) => {
-  if (!game.user.isGM) return;
-
-  const sceneTools = controls.find(c => c.name === 'scenes');
-  if (!sceneTools) return;
-
-  sceneTools.tools.push({
-    name: 'ai-scene-generator',
-    title: 'AI Scene Generator',
-    icon: 'fas fa-wand-magic-sparkles',
-    button: true,
-    onClick: () => {
-      if (!generatorApp) {
-        generatorApp = new SceneGeneratorApp();
+  const tokenControls = controls.tokens;
+  if (tokenControls?.tools) {
+    tokenControls.tools['ai-scene-generator'] = {
+      name: 'ai-scene-generator',
+      title: 'AI Scene Generator',
+      icon: 'fas fa-wand-magic-sparkles',
+      order: Object.keys(tokenControls.tools).length,
+      button: true,
+      visible: game.user.isGM,
+      onChange: () => {
+        if (!generatorApp) {
+          generatorApp = new SceneGeneratorApp();
+        }
+        generatorApp.render(true);
       }
-      generatorApp.render(true);
-    }
-  });
+    };
+  }
 });
