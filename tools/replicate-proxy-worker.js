@@ -53,7 +53,7 @@ export default {
         // GET /runcomfy/status/:request_id — poll status
         if (request.method === 'GET' && path.startsWith('/runcomfy/status/')) {
           const requestId = path.replace('/runcomfy/status/', '');
-          const response = await fetch(`${RUNCOMFY_BASE}/requests/${requestId}/status`, {
+          const response = await fetch(`https://model-api.runcomfy.net/v1/requests/${requestId}/status`, {
             headers: { 'Authorization': `Bearer ${apiToken}` }
           });
           const data = await response.json();
@@ -63,7 +63,7 @@ export default {
         // GET /runcomfy/result/:request_id — get result
         if (request.method === 'GET' && path.startsWith('/runcomfy/result/')) {
           const requestId = path.replace('/runcomfy/result/', '');
-          const response = await fetch(`${RUNCOMFY_BASE}/requests/${requestId}/result`, {
+          const response = await fetch(`https://model-api.runcomfy.net/v1/requests/${requestId}/result`, {
             headers: { 'Authorization': `Bearer ${apiToken}` }
           });
           const data = await response.json();
