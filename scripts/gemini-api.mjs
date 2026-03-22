@@ -44,13 +44,22 @@ export async function generateSceneImage(apiKey, prompt) {
   const data = await response.json();
 
   const candidate = data.candidates?.[0];
-  if (!candidate) throw new Error('No candidates in Gemini response');
+  if (!candidate) {
+    console.error('ai-scene-generator | Full API response:', JSON.stringify(data, null, 2));
+    throw new Error('No candidates in Gemini response');
+  }
 
-  const imagePart = candidate.content?.parts?.find(p => p.inline_data);
-  if (!imagePart) throw new Error('No image data in Gemini response');
+  // Gemini REST API uses camelCase (inlineData) not snake_case (inline_data)
+  const parts = candidate.content?.parts || [];
+  const imagePart = parts.find(p => p.inlineData || p.inline_data);
+  if (!imagePart) {
+    console.error('ai-scene-generator | Response parts:', JSON.stringify(parts, null, 2));
+    throw new Error('No image data in Gemini response');
+  }
 
+  const imageData = imagePart.inlineData || imagePart.inline_data;
   return {
-    base64: imagePart.inline_data.data,
-    mimeType: imagePart.inline_data.mime_type || 'image/png'
+    base64: imageData.data,
+    mimeType: imageData.mimeType || imageData.mime_type || 'image/png'
   };
 }

@@ -45,17 +45,11 @@ async function submitRequest(apiToken, prompt, loraConfig) {
       'X-RunComfy-Token': apiToken
     },
     body: JSON.stringify({
-      loras: [{
+      lora: {
         path: loraConfig.path,
-        network_multiplier: loraConfig.networkMultiplier
-      }],
-      prompt,
-      width: 1024,
-      height: 1024,
-      guidance_scale: 4,
-      sample_steps: 40,
-      seed: Math.floor(Math.random() * 2147483647),
-      sampler: 'flowmatch'
+        scale: loraConfig.networkMultiplier
+      },
+      prompt
     })
   });
 
@@ -66,39 +60,49 @@ async function submitRequest(apiToken, prompt, loraConfig) {
   }
 
   const data = await response.json();
+  console.log('ai-scene-generator | Submit response:', JSON.stringify(data, null, 2));
+
   if (!data.request_id) {
-    console.error('ai-scene-generator | Unexpected submit response:', JSON.stringify(data, null, 2));
     throw new Error('No request_id in RunComfy response');
   }
 
-  return data.request_id;
+  return {
+    requestId: data.request_id,
+    statusUrl: data.status_url,
+    resultUrl: data.result_url
+  };
 }
 
 /**
  * Poll for request completion, then retrieve the result.
  */
-async function waitForResult(apiToken, requestId, maxWait = 120000) {
+async function waitForResult(apiToken, statusUrl, resultUrl, maxWait = 120000) {
   const headers = { 'X-RunComfy-Token': apiToken };
   const start = Date.now();
 
   while (Date.now() - start < maxWait) {
     await new Promise(r => setTimeout(r, 2000));
 
-    const statusResponse = await fetch(`${PROXY_URL}/runcomfy/status/${requestId}`, { headers });
+    const statusResponse = await fetch(`${PROXY_URL}/runcomfy/proxy?url=${encodeURIComponent(statusUrl)}`, { headers });
     if (!statusResponse.ok) throw new Error(`Status poll failed: HTTP ${statusResponse.status}`);
 
     const statusData = await statusResponse.json();
-    const status = statusData.status || statusData;
+    console.log('ai-scene-generator | Status:', JSON.stringify(statusData));
+    const status = statusData.status;
 
-    if (status === 'completed') {
-      const resultResponse = await fetch(`${PROXY_URL}/runcomfy/result/${requestId}`, { headers });
+    if (status === 'completed' || status === 'succeeded') {
+      const resultResponse = await fetch(`${PROXY_URL}/runcomfy/proxy?url=${encodeURIComponent(resultUrl)}`, { headers });
       if (!resultResponse.ok) throw new Error(`Result fetch failed: HTTP ${resultResponse.status}`);
 
       const resultData = await resultResponse.json();
-      const imageUrl = Array.isArray(resultData) ? resultData[0] : (resultData.uri || resultData.url || resultData.image_url);
+      console.log('ai-scene-generator | Result:', JSON.stringify(resultData));
+
+      const output = resultData.output;
+      const imageUrl = typeof output === 'string' ? output
+        : Array.isArray(output) ? output[0]
+        : output?.uri || output?.url || output?.image_url;
 
       if (!imageUrl) {
-        console.error('ai-scene-generator | Unexpected result response:', JSON.stringify(resultData, null, 2));
         throw new Error('No image URL in RunComfy result');
       }
       return imageUrl;
@@ -119,10 +123,10 @@ export async function generateBattlemap(apiToken, userPrompt) {
   const prompt = buildBattlemapPrompt(userPrompt);
   console.log('ai-scene-generator | RunComfy battlemap prompt:', prompt);
 
-  const requestId = await submitRequest(apiToken, prompt, LORA_CONFIGS.battlemap);
+  const { requestId, statusUrl, resultUrl } = await submitRequest(apiToken, prompt, LORA_CONFIGS.battlemap);
   console.log('ai-scene-generator | Request submitted:', requestId);
 
-  const imageUrl = await waitForResult(apiToken, requestId);
+  const imageUrl = await waitForResult(apiToken, statusUrl, resultUrl);
   return { imageUrl };
 }
 
@@ -133,10 +137,10 @@ export async function generateScene(apiToken, userPrompt) {
   const prompt = buildScenePrompt(userPrompt);
   console.log('ai-scene-generator | RunComfy scene prompt:', prompt);
 
-  const requestId = await submitRequest(apiToken, prompt, LORA_CONFIGS.scene);
+  const { requestId, statusUrl, resultUrl } = await submitRequest(apiToken, prompt, LORA_CONFIGS.scene);
   console.log('ai-scene-generator | Request submitted:', requestId);
 
-  const imageUrl = await waitForResult(apiToken, requestId);
+  const imageUrl = await waitForResult(apiToken, statusUrl, resultUrl);
   return { imageUrl };
 }
 

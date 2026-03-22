@@ -50,20 +50,13 @@ export default {
           return jsonResponse(data, response.status);
         }
 
-        // GET /runcomfy/status/:request_id — poll status
-        if (request.method === 'GET' && path.startsWith('/runcomfy/status/')) {
-          const requestId = path.replace('/runcomfy/status/', '');
-          const response = await fetch(`https://model-api.runcomfy.net/v1/requests/${requestId}/status`, {
-            headers: { 'Authorization': `Bearer ${apiToken}` }
-          });
-          const data = await response.json();
-          return jsonResponse(data, response.status);
-        }
-
-        // GET /runcomfy/result/:request_id — get result
-        if (request.method === 'GET' && path.startsWith('/runcomfy/result/')) {
-          const requestId = path.replace('/runcomfy/result/', '');
-          const response = await fetch(`https://model-api.runcomfy.net/v1/requests/${requestId}/result`, {
+        // GET /runcomfy/proxy?url=... — generic proxy for status/result URLs
+        if (request.method === 'GET' && path === '/runcomfy/proxy') {
+          const targetUrl = url.searchParams.get('url');
+          if (!targetUrl || !targetUrl.startsWith('https://model-api.runcomfy.net/')) {
+            return jsonResponse({ error: 'Invalid or missing target URL' }, 400);
+          }
+          const response = await fetch(targetUrl, {
             headers: { 'Authorization': `Bearer ${apiToken}` }
           });
           const data = await response.json();
