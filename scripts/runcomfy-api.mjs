@@ -1,9 +1,10 @@
 /**
  * RunComfy API wrapper for battlemap and scene generation.
  * Uses Flux 2 Klein 9B with custom LoRAs via async polling.
+ * All requests go through Cloudflare Worker proxy to bypass CORS.
  */
 
-const RUNCOMFY_BASE = 'https://model-api.runcomfy.net/v1/models/runcomfy/flux2-klein-9b';
+const PROXY_URL = 'https://replicate-proxy.joshua-e6f.workers.dev';
 
 const LORA_CONFIGS = {
   battlemap: {
@@ -33,15 +34,15 @@ function buildScenePrompt(userPrompt) {
 }
 
 /**
- * Submit a generation request to RunComfy.
+ * Submit a generation request via proxy.
  * Returns a request_id for polling.
  */
 async function submitRequest(apiToken, prompt, loraConfig) {
-  const response = await fetch(RUNCOMFY_BASE, {
+  const response = await fetch(`${PROXY_URL}/runcomfy/generate`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiToken}`
+      'X-RunComfy-Token': apiToken
     },
     body: JSON.stringify({
       loras: [{
@@ -77,20 +78,20 @@ async function submitRequest(apiToken, prompt, loraConfig) {
  * Poll for request completion, then retrieve the result.
  */
 async function waitForResult(apiToken, requestId, maxWait = 120000) {
-  const headers = { 'Authorization': `Bearer ${apiToken}` };
+  const headers = { 'X-RunComfy-Token': apiToken };
   const start = Date.now();
 
   while (Date.now() - start < maxWait) {
     await new Promise(r => setTimeout(r, 2000));
 
-    const statusResponse = await fetch(`${RUNCOMFY_BASE}/requests/${requestId}/status`, { headers });
+    const statusResponse = await fetch(`${PROXY_URL}/runcomfy/status/${requestId}`, { headers });
     if (!statusResponse.ok) throw new Error(`Status poll failed: HTTP ${statusResponse.status}`);
 
     const statusData = await statusResponse.json();
     const status = statusData.status || statusData;
 
     if (status === 'completed') {
-      const resultResponse = await fetch(`${RUNCOMFY_BASE}/requests/${requestId}/result`, { headers });
+      const resultResponse = await fetch(`${PROXY_URL}/runcomfy/result/${requestId}`, { headers });
       if (!resultResponse.ok) throw new Error(`Result fetch failed: HTTP ${resultResponse.status}`);
 
       const resultData = await resultResponse.json();
